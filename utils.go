@@ -11,9 +11,8 @@ import (
 	"strings"
 )
 
-// GetSSHHostList 从 ssh config文件中读取到所有的Host列表
 func GetSSHHostList() (hosts []string, err error) {
-	filePath, err := GetSSHConfigFilePath()
+	filePath, err := GetSSHNodesFilePath()
 	if err != nil {
 		return hosts, errors.Errorf(err, "")
 	}
@@ -30,33 +29,25 @@ func GetSSHHostList() (hosts []string, err error) {
 	const hostNamePrefixLen = len(hostNamePrefix)
 	for sc.Scan() {
 		line := strings.TrimSpace(sc.Text())
-		lineLen := len(line)
-		// is host prefix
-		if lineLen > hostPrefixLen && strings.ToLower(line[:hostPrefixLen]) == hostPrefix {
-			// not hostname prefix
-			if lineLen > hostNamePrefixLen && strings.ToLower(line[:hostNamePrefixLen]) == hostNamePrefix {
-				continue
-			}
-			host := strings.TrimSpace(line[hostPrefixLen:])
-			if host != "" && host != "*" {
-				hosts = append(hosts, host)
-			}
+		if strings.HasPrefix(line, "fqdn:") {
+                        data := strings.Split(line, ":")
+			if len(data) == 2 {
+			hosts = append(hosts, data[1])
+}
 		}
 	}
 	return hosts, nil
 }
 
-// GetSSHConfigFile 得到ssh配置文件的路径
-func GetSSHConfigFilePath() (filePath string, err error) {
+func GetSSHNodesFilePath() (filePath string, err error) {
 	homeDir, err := GetHomeDir()
 	if err != nil {
 		return "", errors.Errorf(err, "")
 	}
-	filePath = filepath.Join(homeDir, ".ssh", "config")
+	filePath = filepath.Join(homeDir, ".ssh", "nodes")
 	return filePath, nil
 }
 
-// GetHomeDir 得到用户的家目录
 func GetHomeDir() (homeDir string, err error) {
 	u, err := user.Current()
 	if nil == err {
